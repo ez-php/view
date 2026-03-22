@@ -1,0 +1,129 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests;
+
+use EzPhp\View\TemplateContext;
+use EzPhp\View\ViewException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
+
+/**
+ * Class TemplateContextTest
+ *
+ * @package Tests
+ */
+#[CoversClass(TemplateContext::class)]
+#[UsesClass(ViewException::class)]
+final class TemplateContextTest extends TestCase
+{
+    private TemplateContext $context;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->context = new TemplateContext(fn (string $name, array $data): string => "partial:{$name}");
+    }
+
+    public function testExtendsStoresLayout(): void
+    {
+        $this->context->extends('layouts.app');
+
+        $this->assertSame('layouts.app', $this->context->getLayout());
+    }
+
+    public function testGetLayoutIsNullByDefault(): void
+    {
+        $this->assertNull($this->context->getLayout());
+    }
+
+    public function testYieldReturnsDefaultWhenSectionNotDefined(): void
+    {
+        $this->assertSame('', $this->context->yield('content'));
+        $this->assertSame('fallback', $this->context->yield('content', 'fallback'));
+    }
+
+    public function testSectionAndEndSectionCaptureOutput(): void
+    {
+        $this->context->section('title');
+        echo 'My Page Title';
+        $this->context->endSection();
+
+        $this->assertSame('My Page Title', $this->context->yield('title'));
+    }
+
+    public function testMultipleSectionsAreStoredIndependently(): void
+    {
+        $this->context->section('title');
+        echo 'Title Content';
+        $this->context->endSection();
+
+        $this->context->section('body');
+        echo 'Body Content';
+        $this->context->endSection();
+
+        $this->assertSame('Title Content', $this->context->yield('title'));
+        $this->assertSame('Body Content', $this->context->yield('body'));
+    }
+
+    public function testEndSectionWithoutSectionThrows(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessageMatches('/endSection\(\) called without/');
+
+        $this->context->endSection();
+    }
+
+    public function testSectionWhileAlreadyInSectionThrows(): void
+    {
+        $this->context->section('first');
+
+        try {
+            $this->context->section('second');
+            $this->fail('Expected ViewException was not thrown');
+        } catch (ViewException $e) {
+            // Clean up the 'first' section's buffer before asserting
+            ob_end_clean();
+            $this->assertStringContainsString("Cannot start section 'second'", $e->getMessage());
+        }
+    }
+
+    public function testEEscapesHtmlSpecialChars(): void
+    {
+        $this->assertSame('&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;', $this->context->e("<script>alert('xss')</script>"));
+    }
+
+    public function testEDoesNotModifyPlainText(): void
+    {
+        $this->assertSame('Hello World', $this->context->e('Hello World'));
+    }
+
+    public function testEEscapesDoubleQuotes(): void
+    {
+        $this->assertSame('say &quot;hello&quot;', $this->context->e('say "hello"'));
+    }
+
+    public function testPartialInvokesRenderer(): void
+    {
+        $this->assertSame('partial:nav', $this->context->partial('nav'));
+        $this->assertSame('partial:partials.card', $this->context->partial('partials.card'));
+    }
+
+    public function testPartialPassesDataToRenderer(): void
+    {
+        $captured = [];
+
+        $context = new TemplateContext(
+            function (string $name, array $data) use (&$captured): string {
+                $captured = $data;
+
+                return '';
+            }
+        );
+
+        $context->partial('nav', ['active' => 'home']);
+
+        $this->assertSame(['active' => 'home'], $captured);
+    }
+}
