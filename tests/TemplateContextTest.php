@@ -126,4 +126,35 @@ final class TemplateContextTest extends TestCase
 
         $this->assertSame(['active' => 'home'], $captured);
     }
+
+    public function testDoIncludeRendersFileWithThisContext(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'ez-view-') . '.php';
+        file_put_contents($file, '<?php echo $this->e($greeting); ?>');
+
+        try {
+            $output = $this->context->doInclude($file, ['greeting' => '<b>Hi</b>']);
+            $this->assertSame('&lt;b&gt;Hi&lt;/b&gt;', $output);
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testDoIncludeCleansBufferOnException(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'ez-view-') . '.php';
+        file_put_contents($file, '<?php throw new \RuntimeException("boom"); ?>');
+
+        $levelBefore = ob_get_level();
+
+        try {
+            $this->context->doInclude($file, []);
+            $this->fail('Expected RuntimeException was not thrown');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('boom', $e->getMessage());
+            $this->assertSame($levelBefore, ob_get_level(), 'Output buffer must be cleaned on exception');
+        } finally {
+            unlink($file);
+        }
+    }
 }
