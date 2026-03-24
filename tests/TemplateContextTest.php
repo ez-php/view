@@ -140,6 +140,59 @@ final class TemplateContextTest extends TestCase
         }
     }
 
+    // ── HTML escaping edge cases ───────────────────────────────────────────────
+
+    public function testEEscapesAmpersand(): void
+    {
+        $this->assertSame('AT&amp;T', $this->context->e('AT&T'));
+    }
+
+    public function testEReturnsEmptyString(): void
+    {
+        $this->assertSame('', $this->context->e(''));
+    }
+
+    public function testEPreservesUtf8Characters(): void
+    {
+        $this->assertSame('Üniform café', $this->context->e('Üniform café'));
+    }
+
+    public function testEDoubleEncodesAlreadyEscapedEntities(): void
+    {
+        // e() must not be idempotent — it encodes the raw string as-is
+        $this->assertSame('&amp;lt;', $this->context->e('&lt;'));
+    }
+
+    public function testEEscapesAllFourSpecialCharsTogether(): void
+    {
+        $this->assertSame('&lt;&gt;&amp;&quot;', $this->context->e('<>&"'));
+    }
+
+    // ── Section edge cases ─────────────────────────────────────────────────────
+
+    public function testSectionCapturingEmptyContent(): void
+    {
+        $this->context->section('empty');
+        $this->context->endSection();
+
+        $this->assertSame('', $this->context->yield('empty'));
+    }
+
+    public function testSectionCanBeYieldedMultipleTimes(): void
+    {
+        $this->context->section('nav');
+        echo '<nav/>';
+        $this->context->endSection();
+
+        $this->assertSame('<nav/>', $this->context->yield('nav'));
+        $this->assertSame('<nav/>', $this->context->yield('nav'), 'yield() must be repeatable');
+    }
+
+    public function testYieldReturnsEmptyStringForUnknownSectionWithNoDefault(): void
+    {
+        $this->assertSame('', $this->context->yield('nonexistent'));
+    }
+
     public function testDoIncludeCleansBufferOnException(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'ez-view-') . '.php';

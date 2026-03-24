@@ -195,6 +195,58 @@ final class ViewEngineTest extends TestCase
         $this->engine->render('uses-partial');
     }
 
+    public function testPartialInsideLayout(): void
+    {
+        $this->write('partials.footer', '<footer><?= $year ?></footer>');
+        $this->write('layouts.with-partial', '<html><?= $this->yield("body") ?><?= $this->partial("partials.footer", ["year" => 2025]) ?></html>');
+        $this->write('child-page', '<?php $this->extends("layouts.with-partial") ?><?php $this->section("body") ?><p>Content</p><?php $this->endSection() ?>');
+
+        $output = $this->engine->render('child-page');
+
+        $this->assertSame('<html><p>Content</p><footer>2025</footer></html>', $output);
+    }
+
+    public function testNestedPartials(): void
+    {
+        $this->write('partials.icon', '<i><?= $name ?></i>');
+        $this->write('partials.button', '<button><?= $this->partial("partials.icon", ["name" => $icon]) ?> <?= $label ?></button>');
+        $this->write('page-nested', '<?= $this->partial("partials.button", ["icon" => "star", "label" => "Save"]) ?>');
+
+        $output = $this->engine->render('page-nested');
+
+        $this->assertSame('<button><i>star</i> Save</button>', $output);
+    }
+
+    public function testPartialWithNoExtraData(): void
+    {
+        $this->write('partials.static', '<span>static</span>');
+        $this->write('host', '<?= $this->partial("partials.static") ?>');
+
+        $output = $this->engine->render('host');
+
+        $this->assertSame('<span>static</span>', $output);
+    }
+
+    public function testLayoutWithEmptySection(): void
+    {
+        $this->write('layouts.empty-section', '<div><?= $this->yield("slot") ?></div>');
+        $this->write('empty-child', '<?php $this->extends("layouts.empty-section") ?><?php $this->section("slot") ?><?php $this->endSection() ?>');
+
+        $output = $this->engine->render('empty-child');
+
+        $this->assertSame('<div></div>', $output);
+    }
+
+    public function testEscapingInsideLayout(): void
+    {
+        $this->write('layouts.escape', '<h1><?= $this->yield("title") ?></h1>');
+        $this->write('escape-child', '<?php $this->extends("layouts.escape") ?><?php $this->section("title") ?><?= $this->e($heading) ?><?php $this->endSection() ?>');
+
+        $output = $this->engine->render('escape-child', ['heading' => '<script>xss</script>']);
+
+        $this->assertSame('<h1>&lt;script&gt;xss&lt;/script&gt;</h1>', $output);
+    }
+
     public function testDataIsNotLeakedAcrossRenders(): void
     {
         $this->write('leak-check', '<?= isset($secret) ? "leaked" : "safe" ?>');
