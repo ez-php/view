@@ -1,6 +1,6 @@
 {
     "name": "ez-php/view",
-    "version": "1.4.2",
+    "version": "1.5.0",
     "description": "PHP template engine for the ez-php framework \u2014 layouts, sections, partials, and HTML escaping",
     "type": "library",
     "license": "MIT",
