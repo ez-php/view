@@ -266,4 +266,34 @@ final class ViewEngineTest extends TestCase
 
         $this->assertSame('<html>Passed Through</html>', $output);
     }
+
+    public function testResolveListenerIsNotifiedOfEveryResolvedTemplateIncludingPartialsAndLayouts(): void
+    {
+        $this->write('partials.icon', '<i>x</i>');
+        $this->write('layouts.shell', '<?= $this->yield("body") ?><?= $this->partial("partials.icon") ?>');
+        $this->write('tracked-page', '<?php $this->extends("layouts.shell") ?><?php $this->section("body") ?>b<?php $this->endSection() ?>');
+
+        $seen = [];
+        $this->engine->onResolve(static function (string $path) use (&$seen): void {
+            $seen[] = basename($path);
+        });
+
+        $this->engine->render('tracked-page');
+
+        $this->assertSame(['tracked-page.php', 'shell.php', 'icon.php'], $seen);
+    }
+
+    public function testResolveListenerCanBeCleared(): void
+    {
+        $this->write('untracked', 'ok');
+        $calls = 0;
+        $this->engine->onResolve(static function () use (&$calls): void {
+            $calls++;
+        });
+        $this->engine->onResolve(null);
+
+        $this->engine->render('untracked');
+
+        $this->assertSame(0, $calls);
+    }
 }

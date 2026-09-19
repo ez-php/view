@@ -299,6 +299,9 @@ Resolves dot-notation template names to file paths and orchestrates the two-phas
 
 Both phases use `TemplateContext::doInclude()` so `$this` is consistently available.
 
+
+`onResolve(?Closure $listener)` registers (or clears, with `null`) an opt-in listener called with the absolute path of every template file the engine resolves — top-level templates, layouts, and partials, in resolution order. It exists for decorators such as `ez-php/view-cache` that need a render's file dependencies; rendering is identical with or without a listener.
+
 ---
 
 ### View (`src/View.php`)

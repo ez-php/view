@@ -26,10 +26,32 @@ namespace EzPhp\View;
 final class ViewEngine
 {
     /**
+     * @var (\Closure(string): void)|null Notified with the absolute path of every template file this
+     *      engine resolves (top-level templates, layouts, and partials), in resolution order.
+     */
+    private ?\Closure $resolveListener = null;
+
+    /**
      * @param string $viewPath Absolute path to the directory containing template files.
      */
     public function __construct(private readonly string $viewPath)
     {
+    }
+
+    /**
+     * Register (or clear, with null) a listener notified with the absolute path of every template
+     * file resolved during rendering — top-level templates, layouts, and partials alike.
+     *
+     * Opt-in observation hook for decorators such as `ez-php/view-cache` that need to know which
+     * files a render depended on. Rendering behaviour is unchanged whether or not a listener is set.
+     *
+     * @param (\Closure(string): void)|null $listener
+     *
+     * @return void
+     */
+    public function onResolve(?\Closure $listener): void
+    {
+        $this->resolveListener = $listener;
     }
 
     /**
@@ -89,6 +111,10 @@ final class ViewEngine
 
         if (!is_file($path)) {
             throw new ViewException("Template not found: {$path}");
+        }
+
+        if ($this->resolveListener !== null) {
+            ($this->resolveListener)($path);
         }
 
         return $path;

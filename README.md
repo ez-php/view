@@ -162,3 +162,13 @@ use EzPhp\View\ViewEngine;
 $engine = new ViewEngine('/path/to/views');
 $html   = $engine->render('home', ['name' => 'Alice']);
 ```
+
+To observe which template files a render touches (used by `ez-php/view-cache` for partial/layout
+invalidation), register a listener — it receives the absolute path of every top-level template,
+layout, and partial the engine resolves, and can be cleared with `null`:
+
+```php
+$engine->onResolve(static function (string $path): void {
+    // record $path
+});
+```
