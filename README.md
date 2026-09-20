@@ -26,7 +26,7 @@ Add config to `config/view.php`:
 
 ```php
 return [
-    'path' => env('VIEW_PATH', base_path('resources/views')),
+    'path' => getenv('VIEW_PATH') ?: 'resources/views',
 ];
 ```
 
