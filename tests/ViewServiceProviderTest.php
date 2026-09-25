@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use EzPhp\Application\Application;
+use EzPhp\Testing\ApplicationTestCase;
 use EzPhp\View\View;
 use EzPhp\View\ViewEngine;
 use EzPhp\View\ViewServiceProvider;
@@ -20,7 +21,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[CoversClass(ViewServiceProvider::class)]
 #[UsesClass(View::class)]
 #[UsesClass(ViewEngine::class)]
-final class ViewServiceProviderTest extends TestCase
+final class ViewServiceProviderTest extends ApplicationTestCase
 {
     /**
      * @param Application $app
