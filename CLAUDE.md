@@ -365,7 +365,7 @@ Static facade. Holds a `ViewEngine|null` singleton. Throws `RuntimeException` wh
 
 | Concern | Where it belongs |
 |---------|-----------------|
-| Template compilation / caching to `.cache` files | Application layer or a future `ez-php/view-cache` package |
+| Rendered-output caching | `ez-php/view-cache` (decorates `ViewEngine`, mtime-based invalidation via `onResolve()`); template compilation is out of scope — templates are plain PHP, cached by OPcache |
 | Global helper functions (`e()`, `route()`, `url()`) | Application layer bootstrap |
 | Asset versioning / mix manifests | Application layer |
 | Template inheritance beyond one level (grandchild → child → layout) | Not planned — YAGNI |
