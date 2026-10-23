@@ -281,6 +281,7 @@ src/
 
 tests/
 ├── TestCase.php            — base PHPUnit test case
+├── ViewServiceProviderTest.php  — Smoke test: ViewServiceProvider registers and boots its bindings in a minimal application context without error
 ├── TemplateContextTest.php — unit tests for context methods (no files, ob_start/ob_get_clean)
 ├── ViewEngineTest.php      — integration tests using real .php files in a temp directory
 └── ViewTest.php            — facade delegation, uninitialized throw, engine replacement
